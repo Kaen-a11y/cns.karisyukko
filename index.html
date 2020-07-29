@@ -1,0 +1,2123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0124)file://C:\Users\3924795\AppData\Local\Microsoft\Windows\Temporary Internet Files\Content.Outlook\VRT08H31\★(AVC)仮出庫.html -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" ""><HTML lang="ja"><HEAD><META 
+content="IE=5.0000" http-equiv="X-UA-Compatible">
+ 
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<META http-equiv="Content-Script-Type" content="text/javascript"> 
+<META http-equiv="Content-Style-Type" content="text/css"> <TITLE>帳票本文</TITLE> 
+<STYLE type="text/css">
+<!--
+BODY {
+	scrollbar-face-color: #f4f2f1; 
+	scrollbar-highlight-color: #edebe8;
+	scrollbar-shadow-color: #edebe8; 
+	scrollbar-3dlight-color: #aaa; 
+	scrollbar-arrow-color: #666;
+	scrollbar-track-color: #d2d0cd; 
+	scrollbar-darkshadow-color: #666;
+	scrollbar-width: 15px;
+	margin:0;
+	text-align:left;
+	color:#222; 
+	background-color:#fff;
+	font-size: 10pt;
+}
+FORM { margin:0; }
+TABLE,TH { font-size: 10pt; font-family: arial; }
+TH { text-align:right; }
+SMALL,.SMALL { font-size: 7pt; font-family: arial; }
+INPUT { font-size: 10pt; font-family: arial; }
+INPUT.btnS { font-size: 8pt; font-family: arial; }
+SELECT   { font-size: 10pt; font-family: arial; }
+SELECT.s { font-size: 10pt; font-family: arial; }
+TEXTAREA { font-size: 10pt; font-family: arial; }
+.win { background-color : #FFFFFF; margin : 0pt 0pt;}
+.red { color:#c00; }
+.notes { font-size:9pt;	color:#c00; }
+.referWK { background-color:#f4f2f1; }
+
+-->
+</STYLE>
+ 
+<SCRIPT type="text/JavaScript">
+<!--
+DocumentParts.TYPE_TEXT = 1;
+DocumentParts.TYPE_TEXTAREA = 2;
+DocumentParts.TYPE_NUMERIC = 3;
+DocumentParts.TYPE_DATE = 4;
+DocumentParts.TYPE_PULLDOWN = 5;
+DocumentParts.TYPE_LIST = 6;
+DocumentParts.TYPE_RADIO = 7;
+DocumentParts.TYPE_CHECK = 8;
+DocumentParts.TYPE_FIXEDTEXT = 9;
+DocumentParts.TYPE_DATETIME = 10;
+DocumentParts.TYPE_DATETIME_RANGE = 11;
+DocumentParts.TYPE_STAMP = 12;
+DocumentParts.TYPE_DOCNAME = 13;
+DocumentParts.TYPE_DOCNUM = 14;
+DocumentParts.TYPE_DRAFTER = 15;
+DocumentParts.TYPE_APPROVER = 16;
+DocumentParts.TYPE_DOCSEQ = 17;
+DocumentParts.INIT_ON = 1;
+DocumentParts.INIT_OFF = 0;
+DocumentParts.REQ_ON = 1;
+DocumentParts.REQ_OFF = 0;
+function DocumentParts(t, n, i, r, m, ini) {
+	this.type = t;
+	this.name = n;
+	this.item = i;
+	this.req  = r;
+	this.msg  = m;
+	this.init = ini;
+}
+
+function _load()
+{
+	focus();
+	var isSetDate = (self.isNewDocument && isNewDocument()) ? true : false;
+
+	for (var index = 0 ; index < partsArray.length; index++) {
+		var parts = partsArray[index];
+		switch(parts.type) {
+		case DocumentParts.TYPE_DATE:
+		case DocumentParts.TYPE_DATETIME:
+			(isSetDate && parts.init == DocumentParts.INIT_ON) ? _set_now(parts.type, parts.name) : _set_week(parts.name);
+			break;
+		case DocumentParts.TYPE_DATETIME_RANGE:
+			var nameArray = parts.name.split('/');
+			(isSetDate && parts.init == DocumentParts.INIT_ON) ? _set_now(parts.type, nameArray[0], nameArray[1]) : _set_week(nameArray[0]);
+			break;
+		}
+	}
+	
+	readnot();
+
+}
+
+function _open_calendar( vName )
+{
+	if (self.callCalendar) callCalendar(vName);
+}
+function set_Date( vName, vYear, vMonth, vDay )
+{
+	var o_y = document.getElementsByName( vName + "_year" )[0];
+	var o_m = document.getElementsByName( vName + "_month" )[0];
+	var o_d = document.getElementsByName( vName + "_day" )[0];
+	o_y.value = vYear;
+	o_m.value = vMonth;
+	o_d.value = vDay;
+	_set_week( vName );
+}
+function _set_week( vName )
+{
+	var o_y = document.getElementsByName( vName + "_year" )[0];
+	var o_m = document.getElementsByName( vName + "_month" )[0];
+	var o_d = document.getElementsByName( vName + "_day" )[0];
+	var o_w = document.getElementsByName( vName + "_wday" )[0];
+	if( !o_y || !o_m || !o_d || !o_w )	return;
+	var Y = o_y.value;
+	var M = o_m.value;
+	var D = o_d.value;
+	if( !is_number(Y) || !is_number(M) || !is_number(D) ) {
+		o_w.value = "";
+		return;
+	}
+	if( is_date( Y, M, D, 23, 59, 59 ) == false ) {
+		o_w.value = "";
+		return;
+	}
+	var week = new Array( "日","月","火","水","木","金","土" );
+	var days = new Date( Y, M-1, D );
+	if( days == null ) {
+		o_w.value = "";
+		return;
+	}
+	if( Y != "" && M != "" && D != "" ) {
+		o_w.value = week[days.getDay()];
+	}
+}
+function _set_now( vType, vName, vName2 )
+{
+	var o_y  = document.getElementsByName( vName + "_year" )[0];
+	var o_m  = document.getElementsByName( vName + "_month" )[0];
+	var o_d  = document.getElementsByName( vName + "_day" )[0];
+	var o_h1 = document.getElementsByName( vName + "_hour" )[0];
+	var o_m1 = document.getElementsByName( vName + "_minute" )[0];
+	var o_h2 = document.getElementsByName( vName2 + "_hour" )[0];
+	var o_m2 = document.getElementsByName( vName2 + "_minute" )[0];
+	if( o_y && o_y.readOnly ) return false;
+	vDate = new Date();
+	if( o_y  ) o_y.value  = vDate.getFullYear();
+	if( o_m  ) o_m.value  = vDate.getMonth() + 1;
+	if( o_d  ) o_d.value  = vDate.getDate();
+	if( o_h1 ) o_h1.value = vDate.getHours();
+	if( o_h2 ) o_h2.value = vDate.getHours();
+	var	vMin = vDate.getMinutes();
+	vMin = ( vMin < 10 ) ? ( "0" + vMin ) : vMin;
+	if( o_m1 ) o_m1.value = vMin;
+	if( o_m2 ) o_m2.value = vMin;
+	_set_week( vName );
+	return true;
+}
+function _clear( vType, vName, vName2 )
+{
+	var o_y  = document.getElementsByName( vName + "_year" )[0];
+	var o_m  = document.getElementsByName( vName + "_month" )[0];
+	var o_d  = document.getElementsByName( vName + "_day" )[0];
+	var o_w  = document.getElementsByName( vName + "_wday" )[0];
+	var o_h1 = document.getElementsByName( vName + "_hour" )[0];
+	var o_m1 = document.getElementsByName( vName + "_minute" )[0];
+	var o_h2 = document.getElementsByName( vName2 + "_hour" )[0];
+	var o_m2 = document.getElementsByName( vName2 + "_minute" )[0];
+	if( o_y && o_y.readOnly ) return false;
+	if( o_y  ) o_y.value  = "";
+	if( o_m  ) o_m.value  = "";
+	if( o_d  ) o_d.value  = "";
+	if( o_w  ) o_w.value  = "";
+	if( o_h1 ) o_h1.value = "";
+	if( o_h2 ) o_h2.value = "";
+	if( o_m1 ) o_m1.value = "";
+	if( o_m2 ) o_m2.value = "";
+	return true;
+}
+
+function CheckInputParameter()
+{
+	for (var index = 0 ; index < partsArray.length; index++) {
+		var parts = partsArray[index];
+		if(!_check_input(parts.type, parts.name, parts.item, parts.req, parts.msg)) return false;
+	}
+
+	var objWork;
+	var n;
+	objWork = document.getElementsByName("shushi")[0];
+	n = objWork.selectedIndex;
+	if(objWork.options[n].value == "選択してください。") {
+		alert("出庫収支を選択してください。");
+		objWork.focus();
+		return false;
+	}
+
+//2個目以降の品番を入力した場合に数量チェックを行う
+	if( document.forms[0].hinban2.value != "" && document.forms[0].amount2.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount2.focus();
+		return false;
+	}
+	else if( document.forms[0].hinban3.value != "" && document.forms[0].amount3.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount3.focus();
+		return false;
+	}
+	else if(document.forms[0].hinban4.value != "" && document.forms[0].amount4.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount4.focus();
+		return false;
+	}
+	else if( document.forms[0].hinban5.value != "" && document.forms[0].amount5.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount5.focus();
+		return false;
+	}
+	else if(document.forms[0].hinban6.value != "" && document.forms[0].amount6.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount6.focus();
+		return false;
+	}
+	else if( document.forms[0].hinban7.value != "" && document.forms[0].amount7.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount7.focus();
+		return false;
+	}
+	else if(document.forms[0].hinban8.value != "" && document.forms[0].amount8.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount8.focus();
+		return false;
+	}
+	else if( document.forms[0].hinban9.value != "" && document.forms[0].amount9.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount9.focus();
+		return false;
+	}
+	else if(document.forms[0].hinban10.value != "" && document.forms[0].amount10.value == ""){
+		alert( "数量を入力してください" );
+		document.forms[0].amount10.focus();
+		return false;
+	}
+
+	return true;
+}
+
+function _check_input( vType, vName, vItem, vReq, vMsg )
+{
+	var names = vName.split('/');
+	vName 	   = ( vType == DocumentParts.TYPE_DATETIME_RANGE ) ? names[0] : vName;
+	var vName2 = ( vType == DocumentParts.TYPE_DATETIME_RANGE ) ? names[1] : '';
+	try {
+		if( !_check_req( vType, vName, vItem, vReq, vName2 )) {
+			alert( vMsg );
+			_err_focus( vType, vName, vItem );
+			return false;
+		}
+		var rc = true;
+		switch( eval( vType )) {
+		case DocumentParts.TYPE_NUMERIC:
+			rc = _check_number( vName );
+			break;
+		case DocumentParts.TYPE_DATE:
+		case DocumentParts.TYPE_DATETIME:
+		case DocumentParts.TYPE_DATETIME_RANGE:
+			rc = _check_date( vType, vName, vName2 );
+			break;
+		}
+	} catch (e) {
+		rc = false;
+	}
+	return rc;
+}
+function _err_focus( vType, vName, vItem )
+{
+	var obj = document.getElementsByName( vName )[0];
+	switch( eval( vType )) {
+	case DocumentParts.TYPE_RADIO:
+		if( eval( vItem ) > 1 ) {
+			obj = document.getElementsByName( vName )[0];
+		} else {
+			obj = document.getElementsByName( vName )[0];
+		}
+		break;
+	case DocumentParts.TYPE_CHECK:
+		obj = document.getElementsByName( vName + "_0" )[0];
+		break;
+	case DocumentParts.TYPE_DATE:
+	case DocumentParts.TYPE_DATETIME:
+	case DocumentParts.TYPE_DATETIME_RANGE:
+		obj = document.getElementsByName( vName + "_year" )[0];
+		break;
+	}
+	if( obj != null )	obj.focus();
+}
+function _check_req( vType, vName, vItem, vReq, vName2 )
+{
+	if( eval( vReq ) != DocumentParts.REQ_ON )	return true;
+	switch( eval( vType )) {
+	case DocumentParts.TYPE_TEXT:
+	case DocumentParts.TYPE_TEXTAREA:
+	case DocumentParts.TYPE_NUMERIC:
+		if (document.getElementsByName( vName )[0].readOnly) return true;
+		document.getElementsByName( vName )[0].value = trimSpace( document.getElementsByName( vName )[0].value );
+		var val = document.getElementsByName( vName )[0].value;
+		if( val == "" )	return false;
+		break;
+	case DocumentParts.TYPE_PULLDOWN:
+	case DocumentParts.TYPE_LIST:
+		var selectElement = document.getElementsByName( vName )[0];
+		if (selectElement.disabled) return true;
+		for( var cnt=0; cnt<selectElement.length; cnt++ ) {
+			if( selectElement.options[cnt].value != "" && selectElement.options[cnt].selected )	return true;
+		}
+		return false
+	case DocumentParts.TYPE_RADIO:
+		if (document.getElementsByName( vName )[0].disabled) return true;
+		if( eval( vItem ) > 1 ) {
+			for( var cnt=0; cnt<eval( vItem ); cnt++ ) {
+				if( document.getElementsByName( vName )[cnt].checked )	return true;
+			}
+		} else {
+			if( document.getElementsByName( vName )[0].checked )	return true;
+		}
+		return false;
+	case DocumentParts.TYPE_CHECK:
+		if (document.getElementsByName( vName + "_0" )[0].disabled) return true;
+		for( var cnt=0; cnt<eval( vItem ); cnt++ ) {
+			if( document.getElementsByName( vName + "_" + cnt )[0].checked )	return true;
+		}
+		return false;
+	case DocumentParts.TYPE_DATE:
+	case DocumentParts.TYPE_DATETIME:
+	case DocumentParts.TYPE_DATETIME_RANGE:
+		if (document.getElementsByName( vName + "_year" )[0].readOnly) return true;
+		var o_y  = document.getElementsByName( vName + "_year" )[0];
+		var o_m  = document.getElementsByName( vName + "_month" )[0];
+		var o_d  = document.getElementsByName( vName + "_day" )[0];
+		if( !o_y || !o_m || !o_d )	return true;
+		o_y.value = trimSpace( o_y.value );
+		o_m.value = trimSpace( o_m.value );
+		o_d.value = trimSpace( o_d.value );
+		if( o_y.value == "" && o_m.value == "" && o_d.value == "" ) {
+			return false;
+		}
+		if( eval( vType ) == DocumentParts.TYPE_DATE )	return true;
+		var o_h1 = document.getElementsByName( vName + "_hour" )[0];
+		var o_m1 = document.getElementsByName( vName + "_minute" )[0];
+		if( !o_h1 || !o_m1 )	return true;
+		o_h1.value = trimSpace( o_h1.value );
+		o_m1.value = trimSpace( o_m1.value );
+		if( o_h1.value == "" && o_m1.value == "" ) {
+			return false;
+		}
+		if( eval( vType ) == DocumentParts.TYPE_DATETIME )	return true;
+		var o_h2 = document.getElementsByName( vName2 + "_hour" )[0];
+		var o_m2 = document.getElementsByName( vName2 + "_minute" )[0];
+		if( !o_h2 || !o_m2 )	return true;
+		o_h2.value = trimSpace( o_h2.value );
+		o_m2.value = trimSpace( o_m2.value );
+		if( o_h2.value == "" && o_m2.value == "" ) {
+			return false;
+		}
+		if( eval( vType ) == DocumentParts.TYPE_DATETIME_RANGE )	return true;
+		break;
+	case DocumentParts.TYPE_DOCNAME:
+	case DocumentParts.TYPE_DOCNUM:
+	case DocumentParts.TYPE_DOCSEQ:
+		if( document.getElementsByName( vName )[0]) {
+			if (document.getElementsByName( vName )[0].readOnly) return true;
+			document.getElementsByName( vName )[0].value = trimSpace( document.getElementsByName( vName )[0].value );
+			var val = document.getElementsByName( vName )[0].value;
+			if( val == "" )	return false;
+		}
+		break;
+	case DocumentParts.TYPE_DRAFTER:
+	case DocumentParts.TYPE_APPROVER:
+		if( document.getElementsByName( vName )[0]) {
+			if (document.getElementsByName( vName )[0].readOnly) return true;
+			document.getElementsByName( vName )[0].value = trimSpace( document.getElementsByName( vName )[0].value );
+			var val = document.getElementsByName( vName )[0].value;
+			if( val == "" )	return false;
+		}
+		break;
+	}
+	return true;
+}
+function _check_number( vName )
+{
+	document.getElementsByName( vName )[0].value = trimSpace( document.getElementsByName( vName )[0].value );
+	if( !is_number( document.getElementsByName( vName )[0].value )) {
+		if( !is_number_ex( document.getElementsByName( vName )[0].value )) {
+			alert( "数値の入力が不正です。" );
+			document.getElementsByName( vName )[0].focus();
+			return false;
+		}
+	}
+	return true;
+}
+function _check_date( vType, vName, vName2 )
+{
+	var o_y  = document.getElementsByName( vName + "_year" )[0];
+	var o_m  = document.getElementsByName( vName + "_month" )[0];
+	var o_d  = document.getElementsByName( vName + "_day" )[0];
+	var o_y2 = document.getElementsByName( vName2 + "_year" )[0];
+	var o_m2 = document.getElementsByName( vName2 + "_month" )[0];
+	var o_d2 = document.getElementsByName( vName2 + "_day" )[0];
+	if ( o_y2 ) o_y2.value = o_y.value;
+	if ( o_m2 ) o_m2.value = o_m.value;
+	if ( o_d2 ) o_d2.value = o_d.value;
+	if( !o_y || !o_m || !o_d )	return true;
+	o_y.value = trimSpace( o_y.value );
+	o_m.value = trimSpace( o_m.value );
+	o_d.value = trimSpace( o_d.value );
+	if( o_y.value.length < 1 && o_m.value.length < 1 && o_d.value.length < 1 ) {
+	} else {
+		if( o_y.value.length < 1 || o_m.value.length < 1 || o_d.value.length < 1
+		||	!is_number( o_y.value ) || !is_number( o_m.value ) || !is_number( o_d.value )) {
+			alert( "日付の入力が不正です。" );
+			o_y.focus();
+			return false;
+		}
+		if( !is_date( o_y.value, o_m.value, o_d.value, 0, 0, 0 )) {
+			alert( "日付の入力が不正です。" );
+			o_y.focus();
+			return false;
+		}
+	}
+	if( eval( vType ) == DocumentParts.TYPE_DATE )	return true;
+	var o_h1 = document.getElementsByName( vName + "_hour" )[0];
+	var o_m1 = document.getElementsByName( vName + "_minute" )[0];
+	if( !o_h1 || !o_m1 )	return true;
+	o_h1.value = trimSpace( o_h1.value );
+	o_m1.value = trimSpace( o_m1.value );
+	if( o_y.value.length  < 1 && o_m.value.length  < 1 && o_d.value.length < 1
+	&&	o_h1.value.length < 1 && o_m1.value.length < 1 ) {
+	} else {
+		if( o_h1.value.length < 1 || o_m1.value.length < 1
+		||	!is_number( o_h1.value ) || !is_number( o_m1.value )) {
+			alert( "時刻の入力が不正です。" );
+			o_h1.focus();
+			return false;
+		}
+		if( !is_date( o_y.value, o_m.value, o_d.value, o_h1.value, o_m1.value, 0 )) {
+			alert( "時刻の入力が不正です。" );
+			o_h1.focus();
+			return false;
+		}
+	}
+	if( eval( vType ) == DocumentParts.TYPE_DATETIME )	return true;
+	var o_h2 = document.getElementsByName( vName2 + "_hour" )[0];
+	var o_m2 = document.getElementsByName( vName2 + "_minute" )[0];
+	if( !o_h2 || !o_m2 )	return true;
+	o_h2.value = trimSpace( o_h2.value );
+	o_m2.value = trimSpace( o_m2.value );
+	if( o_y.value.length  < 1 && o_m.value.length  < 1 && o_d.value.length < 1
+	&&	o_h1.value.length < 1 && o_m1.value.length < 1
+	&&	o_h2.value.length < 1 && o_m2.value.length < 1 ) {
+	} else {
+		if( o_h2.value.length < 1 || o_m2.value.length < 1
+		||	!is_number( o_h2.value ) || !is_number( o_m2.value )) {
+			alert( "時刻の入力が不正です。" );
+			o_h2.focus();
+			return false;
+		}
+		if( !is_date( o_y.value, o_m.value, o_d.value, o_h2.value, o_m2.value, 0 )) {
+			alert( "時刻の入力が不正です。" );
+			o_h2.focus();
+			return false;
+		}
+		if( !is_form_to_date( o_y.value, o_m.value, o_d.value, o_h1.value, o_m1.value, 0
+							, o_y.value, o_m.value, o_d.value, o_h2.value, o_m2.value, 0 )) {
+			alert( "時刻の入力が不正です。" );
+			o_h2.focus();
+			return false;
+		}
+	}
+	if( eval( vType ) == DocumentParts.TYPE_DATETIME_RANGE )	return true;
+	return true;
+}
+function trimSpace(varStr)
+{
+	for( var trim_Start=0; eval( trim_Start )<varStr.length; trim_Start++ ) {
+		trim_Code = varStr.charAt( trim_Start );
+		if( trim_Code != " " && trim_Code != "\u3000" ) {
+			break;
+		}
+	}
+	for( var trim_End=varStr.length-1; eval( trim_End )>=eval( trim_Start ); trim_End-- ) {
+		trim_Code = varStr.charAt( trim_End );
+		if( trim_Code != " " && trim_Code != "\u3000" ) {
+			break;
+		}
+	}
+	return varStr.substr( trim_Start, trim_End - trim_Start + 1 );
+}
+function is_number( str )
+{
+	for( var i=0; i<str.length; i++ ) {
+		if( str.charAt(i) < '0' || str.charAt(i) > '9' ) {
+			return false;
+		}
+	}
+	return true;
+}
+function is_number_ex( str )
+{
+	for( var cnt=0; cnt<str.length; cnt++ ) {
+		var c = str.charAt(cnt);
+		if (c!='+'&&c!='-'&&c!=','&&c!='.'&&!is_number(c)) {
+			return false;
+		}
+	}
+	return true;
+}
+function is_date( YY, MM, DD, hh, mm, ss )
+{
+	if( eval( YY ) < 1900 )										return false;
+	if( eval( MM ) < 1 || eval( MM ) > 12 )						return false;
+	if( eval( DD ) < 1
+	||	eval( DD ) > get_month_day( eval( YY ), eval( MM ) ))	return false;
+	if( eval( hh ) < 0 || eval( hh ) > 23 )						return false;
+	if( eval( mm ) < 0 || eval( mm ) > 59 )						return false;
+	if( eval( mm ) < 0 || eval( mm ) > 59 )						return false;
+	return true;
+}
+function is_form_to_date( sYY, sMM, sDD, shh, smm, sss, eYY, eMM, eDD, ehh, emm, ess )
+{
+    var sDate = new Date( eval( sYY ) ,  eval( sMM ) -1,  eval( sDD ) ,  eval( shh ) ,  eval( smm ) ,  eval( sss ));
+    var eDate = new Date( eval( eYY ) ,  eval( eMM ) -1,  eval( eDD ) ,  eval( ehh ) ,  eval( emm ) ,  eval( ess ));
+    if( sDate > eDate ) {
+        return false;
+    }
+    return true;
+}
+function is_leap_year( year )
+{
+	if(( year % 400 ) == 0 )	return true;
+	if(( year % 100 ) == 0 )	return false;
+	if(( year %   4 ) == 0 )	return true;
+	return false;
+}
+function get_month_day( year, month )
+{
+	if( month > 12 ) {
+		month -= 12; year += 1;
+	} else
+	if( month < 1 ) {
+		month += 12; year -= 1;
+	}
+	if( month == 2 ) {
+		return ( is_leap_year( year ) ) ? 29 : 28;
+	} else
+	if( month == 4 || month ==  6 || month == 9 || month == 11 ) {
+		return 30;
+    }
+	return 31;
+}
+
+//起案後に処理
+function g5_flow_start_(){
+	copy();
+	copy1();
+	return true;
+}
+
+//起案後、承認可能な書類を開いたときに処理
+function g5_approval_flow_(){
+	copy();
+	return true;
+}
+
+//承認後に処理
+function g5_flow_approval_(){
+	copy1();
+	return true;
+}
+
+
+//否認時に処理
+function g5_flow_negation_(){
+	copy();
+	copy1();
+
+	document.forms[0].name1_5.value = document.forms[0].name2_5.value = document.forms[0].name3_5.value = document.forms[0].name4_5.value = "";
+	document.forms[0].date1_5.value = document.forms[0].date2_5.value = document.forms[0].date3_5.value = document.forms[0].date4_5.value = "";
+	document.forms[0].name1_4.value = document.forms[0].name2_4.value = document.forms[0].name3_4.value = document.forms[0].name4_4.value = "";
+	document.forms[0].date1_4.value = document.forms[0].date2_4.value = document.forms[0].date3_4.value = document.forms[0].date4_4.value = "";
+	document.forms[0].name1_3.value = document.forms[0].name2_3.value = document.forms[0].name3_3.value = document.forms[0].name4_3.value = "";
+	document.forms[0].date1_3.value = document.forms[0].date2_3.value = document.forms[0].date3_3.value = document.forms[0].date4_3.value = "";
+	document.forms[0].name1_2.value = document.forms[0].name2_2.value = document.forms[0].name3_2.value = document.forms[0].name4_2.value = "";
+	document.forms[0].date1_2.value = document.forms[0].date2_2.value = document.forms[0].date3_2.value = document.forms[0].date4_2.value = "";
+	document.forms[0].name1_1.value = document.forms[0].name2_1.value = document.forms[0].name3_1.value = document.forms[0].name4_1.value = "";
+	document.forms[0].date1_1.value = document.forms[0].date2_1.value = document.forms[0].date3_1.value = document.forms[0].date4_1.value = "";
+
+	document.forms[0].juryou1.value = document.forms[0].juryou2.value = document.forms[0].juryou3.value = document.forms[0].juryou4.value = "";
+
+	return true;
+}
+
+//Aの入力内容をB・C・D・Eにコピーする
+function copy1(){
+
+	with(document.forms[0]){
+		day1_year.value = day2_year.value = day3_year.value = day4_year.value = day_year.value;
+		day1_month.value = day2_month.value = day3_month.value = day4_month.value = day_month.value;
+		day1_day.value = day2_day.value = day3_day.value = day4_day.value = day_day.value;
+		day1_wday.value = day2_wday.value = day3_wday.value = day4_wday.value = day_wday.value;
+	
+		user_section1.value = user_section2.value = user_section3.value = user_section4.value = user_section.value;
+		ex_line1.value = ex_line2.value = ex_line3.value = ex_line4.value = ex_line.value;
+		mobile1.value = mobile2.value = mobile3.value = mobile4.value = mobile.value;
+		shushi1.value = shushi2.value = shushi3.value = shushi4.value = shushi.value;
+		yosan1.value = yosan2.value = yosan3.value = yosan4.value = yosan.value;
+		henkyaku1_year.value = henkyaku2_year.value = henkyaku3_year.value = henkyaku4_year.value = henkyaku_year.value;
+		henkyaku1_month.value = henkyaku2_month.value = henkyaku3_month.value = henkyaku4_month.value = henkyaku_month.value;
+		henkyaku1_day.value = henkyaku2_day.value = henkyaku3_day.value = henkyaku4_day.value = henkyaku_day.value;
+		henkyaku1_wday.value = henkyaku2_wday.value = henkyaku3_wday.value = henkyaku4_wday.value = henkyaku_wday.value;
+
+		hinban11.value = hinban21.value = hinban31.value = hinban41.value = hinban1.value;
+		amount11.value = amount21.value = amount31.value = amount41.value = amount1.value;
+		item11.value = item21.value = item31.value = item41.value = item1.value;
+		hinban12.value = hinban22.value = hinban32.value = hinban42.value = hinban2.value;
+		amount12.value = amount22.value = amount32.value = amount42.value = amount2.value;
+		item12.value = item22.value = item32.value = item42.value = item2.value;
+		hinban13.value = hinban23.value = hinban33.value = hinban43.value = hinban3.value;
+		amount13.value = amount23.value = amount33.value = amount43.value = amount3.value;
+		item13.value = item23.value = item33.value = item43.value = item3.value;
+		hinban14.value = hinban24.value = hinban34.value = hinban44.value = hinban4.value;
+		amount14.value = amount24.value = amount34.value = amount44.value = amount4.value;
+		item14.value = item24.value = item34.value = item44.value = item4.value;
+		hinban15.value = hinban25.value = hinban35.value = hinban45.value = hinban5.value;
+		amount15.value = amount25.value = amount35.value = amount45.value = amount5.value;
+		item15.value = item25.value = item35.value = item45.value = item5.value;
+		hinban16.value = hinban26.value = hinban36.value = hinban46.value = hinban6.value;
+		amount16.value = amount26.value = amount36.value = amount46.value = amount6.value;
+		item16.value = item26.value = item36.value = item46.value = item6.value;
+		hinban17.value = hinban27.value = hinban37.value = hinban47.value = hinban7.value;
+		amount17.value = amount27.value = amount37.value = amount47.value = amount7.value;
+		item17.value = item27.value = item37.value = item47.value = item7.value;
+		hinban18.value = hinban28.value = hinban38.value = hinban48.value = hinban8.value;
+		amount18.value = amount28.value = amount38.value = amount48.value = amount8.value;
+		item18.value = item28.value = item38.value = item48.value = item8.value;
+		hinban19.value = hinban29.value = hinban39.value = hinban49.value = hinban9.value;
+		amount19.value = amount29.value = amount39.value = amount49.value = amount9.value;
+		item19.value = item29.value = item39.value = item49.value = item9.value;
+		hinban20.value = hinban30.value = hinban40.value = hinban50.value = hinban10.value;
+		amount20.value = amount30.value = amount40.value = amount50.value = amount10.value;
+		item20.value = item30.value = item40.value = item50.value = item10.value;
+
+		mokuteki1.value = mokuteki2.value = mokuteki3.value = mokuteki4.value = mokuteki.value;
+		
+	}
+	document.forms[0].name_k1.value = document.forms[0].name_k2.value = document.forms[0].name_k3.value = document.forms[0].name_k4.value = document.getElementById("name_k").innerText;	
+
+}
+
+
+//Aの押印内容をB・C・D・Eにコピーする
+function copy(){
+	document.forms[0].name1_5.value = document.forms[0].name2_5.value = document.forms[0].name3_5.value = document.forms[0].name4_5.value = document.getElementById("name5").innerText;
+	document.forms[0].date1_5.value = document.forms[0].date2_5.value = document.forms[0].date3_5.value = document.forms[0].date4_5.value = document.getElementById("date5").innerText;
+
+	document.forms[0].name1_4.value = document.forms[0].name2_4.value = document.forms[0].name3_4.value = document.forms[0].name4_4.value = document.getElementById("name4").innerText;
+	document.forms[0].date1_4.value = document.forms[0].date2_4.value = document.forms[0].date3_4.value = document.forms[0].date4_4.value = document.getElementById("date4").innerText;
+
+	document.forms[0].name1_3.value = document.forms[0].name2_3.value = document.forms[0].name3_3.value = document.forms[0].name4_3.value = document.getElementById("name3").innerText;
+	document.forms[0].date1_3.value = document.forms[0].date2_3.value = document.forms[0].date3_3.value = document.forms[0].date4_3.value = document.getElementById("date3").innerText;
+
+	document.forms[0].name1_2.value = document.forms[0].name2_2.value = document.forms[0].name3_2.value = document.forms[0].name4_2.value = document.getElementById("name2").innerText;
+	document.forms[0].date1_2.value = document.forms[0].date2_2.value = document.forms[0].date3_2.value = document.forms[0].date4_2.value = document.getElementById("date2").innerText;
+
+	document.forms[0].name1_1.value = document.forms[0].name2_1.value = document.forms[0].name3_1.value = document.forms[0].name4_1.value = document.getElementById("name1").innerText;
+	document.forms[0].date1_1.value = document.forms[0].date2_1.value = document.forms[0].date3_1.value = document.forms[0].date4_1.value = document.getElementById("date1").innerText;
+
+	document.forms[0].juryou1.value = document.forms[0].juryou2.value = document.forms[0].juryou3.value = document.forms[0].juryou4.value = document.getElementById("name1").innerText;
+
+	return true;
+}
+
+//テキストの入力を不可にする。
+function readnot(){
+
+	with(document.forms[0]){
+		day1_year.readOnly = day2_year.readOnly = day3_year.readOnly = day4_year.readOnly = true;
+		day1_month.readOnly = day2_month.readOnly = day3_month.readOnly = day4_month.readOnly = true;
+		day1_day.readOnly = day2_day.readOnly = day3_day.readOnly = day4_day.readOnly = true;
+		day1_wday.readOnly = day2_wday.readOnly = day3_wday.readOnly = day4_wday.readOnly = true;
+		user_section1.readOnly = user_section2.readOnly = user_section3.readOnly = user_section4.readOnly = true;
+		ex_line1.readOnly = ex_line2.readOnly = ex_line3.readOnly = ex_line4.readOnly = true;
+		mobile1.readOnly = mobile2.readOnly = mobile3.readOnly = mobile4.readOnly = true;
+		shushi1.readOnly = shushi2.readOnly = shushi3.readOnly = shushi4.readOnly = true;
+		yosan1.readOnly = yosan2.readOnly = yosan3.readOnly = yosan4.readOnly = true;
+		henkyaku1_year.readOnly = henkyaku2_year.readOnly = henkyaku3_year.readOnly = henkyaku4_year.readOnly = true;
+		henkyaku1_month.readOnly = henkyaku2_month.readOnly = henkyaku3_month.readOnly = henkyaku4_month.readOnly = true;
+		henkyaku1_day.readOnly = henkyaku2_day.readOnly = henkyaku3_day.readOnly = henkyaku4_day.readOnly = true;
+		henkyaku1_wday.readOnly = henkyaku2_wday.readOnly = henkyaku3_wday.readOnly = henkyaku4_wday.readOnly = true;
+		hinban11.readOnly = hinban21.readOnly = hinban31.readOnly = hinban41.readOnly = true;
+		amount11.readOnly = amount21.readOnly = amount31.readOnly = amount41.readOnly = true;
+		item11.readOnly = item21.readOnly = item31.readOnly = item41.readOnly = true;
+		hinban12.readOnly = hinban22.readOnly = hinban32.readOnly = hinban42.readOnly = true;
+		amount12.readOnly = amount22.readOnly = amount32.readOnly = amount42.readOnly = true;
+		item12.readOnly = item22.readOnly = item32.readOnly = item42.readOnly = true;
+		hinban13.readOnly = hinban23.readOnly = hinban33.readOnly = hinban43.readOnly = true;
+		amount13.readOnly = amount23.readOnly = amount33.readOnly = amount43.readOnly = true;
+		item13.readOnly = item23.readOnly = item33.readOnly = item43.readOnly = true;
+		hinban14.readOnly = hinban24.readOnly = hinban34.readOnly = hinban44.readOnly = true;
+		amount14.readOnly = amount24.readOnly = amount34.readOnly = amount44.readOnly = true;
+		item14.readOnly = item24.readOnly = item34.readOnly = item44.readOnly = true;
+		hinban15.readOnly = hinban25.readOnly = hinban35.readOnly = hinban45.readOnly = true;
+		amount15.readOnly = amount25.readOnly = amount35.readOnly = amount45.readOnly = true;
+		item15.readOnly = item25.readOnly = item35.readOnly = item45.readOnly = true;
+		hinban16.readOnly = hinban26.readOnly = hinban36.readOnly = hinban46.readOnly = true;
+		amount16.readOnly = amount26.readOnly = amount36.readOnly = amount46.readOnly = true;
+		item16.readOnly = item26.readOnly = item36.readOnly = item46.readOnly = true;
+		hinban17.readOnly = hinban27.readOnly = hinban37.readOnly = hinban47.readOnly = true;
+		amount17.readOnly = amount27.readOnly = amount37.readOnly = amount47.readOnly = true;
+		item17.readOnly = item27.readOnly = item37.readOnly = item47.readOnly = true;
+		hinban18.readOnly = hinban28.readOnly = hinban38.readOnly = hinban48.readOnly = true;
+		amount18.readOnly = amount28.readOnly = amount38.readOnly = amount48.readOnly = true;
+		item18.readOnly = item28.readOnly = item38.readOnly = item48.readOnly = true;
+		hinban19.readOnly = hinban29.readOnly = hinban39.readOnly = hinban49.readOnly = true;
+		amount19.readOnly = amount29.readOnly = amount39.readOnly = amount49.readOnly = true;
+		item19.readOnly = item29.readOnly = item39.readOnly = item49.readOnly = true;
+		hinban20.readOnly = hinban30.readOnly = hinban40.readOnly = hinban50.readOnly = true;
+		amount20.readOnly = amount30.readOnly = amount40.readOnly = amount50.readOnly = true;
+		item20.readOnly = item30.readOnly = item40.readOnly = item50.readOnly = true;
+		mokuteki1.readOnly = mokuteki2.readOnly = mokuteki3.readOnly = mokuteki4.readOnly = true;
+
+		name1_5.readOnly = name2_5.readOnly = name3_5.readOnly = name4_5.readOnly = true;
+		date1_5.readOnly = date2_5.readOnly = date3_5.readOnly = date4_5.readOnly = true;
+		name1_4.readOnly = name2_4.readOnly = name3_4.readOnly = name4_4.readOnly = true;
+		date1_4.readOnly = date2_4.readOnly = date3_4.readOnly = date4_4.readOnly = true;
+		name1_3.readOnly = name2_3.readOnly = name3_3.readOnly = name4_3.readOnly = true;
+		date1_3.readOnly = date2_3.readOnly = date3_3.readOnly = date4_3.readOnly = true;
+		name1_2.readOnly = name2_2.readOnly = name3_2.readOnly = name4_2.readOnly = true;
+		date1_2.readOnly = date2_2.readOnly = date3_2.readOnly = date4_2.readOnly = true;
+		name1_1.readOnly = name2_1.readOnly = name3_1.readOnly = name4_1.readOnly = true;
+		date1_1.readOnly = date2_1.readOnly = date3_1.readOnly = date4_1.readOnly = true;
+
+	}
+	return true;
+}
+
+var partsArray = new Array();
+partsArray.push(new DocumentParts(9,"",0,0,"",0));
+partsArray.push(new DocumentParts(12,"",6,0,"",0));
+partsArray.push(new DocumentParts(14,"",0,0,"",0));
+partsArray.push(new DocumentParts(4,"day",0,0,"",1));
+partsArray.push(new DocumentParts(15,"user_section",0,1,"グループ名をを入力してください",0));
+partsArray.push(new DocumentParts(1,"ex_line",0,1,"内線を入力してください。",0));
+partsArray.push(new DocumentParts(1,"mobile",0,1,"携帯電話または外線を入力してください",0));
+partsArray.push(new DocumentParts(15,"",0,0,"",0));
+partsArray.push(new DocumentParts(15,"",0,0,"",0));
+partsArray.push(new DocumentParts(15,"",0,0,"",0));
+partsArray.push(new DocumentParts(5,"shushi",0,0,"",0));
+partsArray.push(new DocumentParts(1,"yosan",0,1,"予算単位を入力してください。",0));
+partsArray.push(new DocumentParts(4,"henkyaku",0,1,"返却予定日を入力してください。",0));
+partsArray.push(new DocumentParts(1,"mokuteki",0,1,"使用目的を入力してください。",0));
+partsArray.push(new DocumentParts(1,"post_no",0,1,"郵便番号を入力してください。",0));
+partsArray.push(new DocumentParts(4,"request",0,1,"要望着日を入力してください。",0));
+partsArray.push(new DocumentParts(1,"address",0,1,"住所を入力してください。",0));
+partsArray.push(new DocumentParts(1,"company",0,1,"会社名を入力してください。",0));
+partsArray.push(new DocumentParts(1,"niukenin",0,1,"荷受人を入力してください。",0));
+partsArray.push(new DocumentParts(1,"out_line1",0,1,"外線を入力してください。",0));
+partsArray.push(new DocumentParts(1,"line",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban1",0,1,"品番を入力してください。",0));
+partsArray.push(new DocumentParts(3,"amount1",0,1,"数量を入力してください。",0));
+partsArray.push(new DocumentParts(1,"item1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban2",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban3",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban4",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban5",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban6",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount6",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item6",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban7",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount7",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item7",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban8",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount8",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item8",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban9",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount9",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item9",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban10",0,0,"",0));
+partsArray.push(new DocumentParts(3,"amount10",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item10",0,0,"",0));
+partsArray.push(new DocumentParts(9,"",0,0,"",0));
+partsArray.push(new DocumentParts(9,"",0,0,"",0));
+partsArray.push(new DocumentParts(14,"",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name1_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date1_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name1_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date1_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name1_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date1_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name1_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date1_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name1_1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date1_1",0,0,"",0));
+partsArray.push(new DocumentParts(4,"day1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"user_section1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"ex_line1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mobile1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name_k1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"juryou1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"shushi1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"yosan1",0,0,"",0));
+partsArray.push(new DocumentParts(4,"henkyaku1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mokuteki1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban11",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount11",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item11",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban12",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount12",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item12",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban13",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount13",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item13",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban14",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount14",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item14",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban15",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount15",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item15",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban16",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount16",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item16",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban17",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount17",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item17",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban18",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount18",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item18",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban19",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount19",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item19",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban20",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount20",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item20",0,0,"",0));
+partsArray.push(new DocumentParts(9,"",0,0,"",0));
+partsArray.push(new DocumentParts(14,"",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name2_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date2_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name2_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date2_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name2_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date2_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name2_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date2_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name2_1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date2_1",0,0,"",0));
+partsArray.push(new DocumentParts(4,"day2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"user_section2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"ex_line2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mobile2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name_k2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"juryou2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"shushi2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"yosan2",0,0,"",0));
+partsArray.push(new DocumentParts(4,"henkyaku2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mokuteki2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban21",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount21",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item21",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban22",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount22",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item22",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban23",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount23",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item23",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban24",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount24",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item24",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban25",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount25",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item25",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban26",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount26",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item26",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban27",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount27",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item27",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban28",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount28",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item28",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban29",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount29",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item29",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban30",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount30",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item30",0,0,"",0));
+partsArray.push(new DocumentParts(14,"",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name3_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date3_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name3_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date3_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name3_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date3_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name3_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date3_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name3_1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date3_1",0,0,"",0));
+partsArray.push(new DocumentParts(4,"day3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"user_section3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"ex_line3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mobile3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name_k3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"juryou3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"shushi3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"yosan3",0,0,"",0));
+partsArray.push(new DocumentParts(4,"henkyaku3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mokuteki3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban31",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount31",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item31",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban32",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount32",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item32",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban33",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount33",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item33",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban34",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount34",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item34",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban35",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount35",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item35",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban36",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount36",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item36",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban37",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount37",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item37",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban38",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount38",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item38",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban39",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount39",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item39",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban40",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount40",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item40",0,0,"",0));
+partsArray.push(new DocumentParts(14,"",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name4_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date4_5",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name4_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date4_4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name4_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date4_3",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name4_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date4_2",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name4_1",0,0,"",0));
+partsArray.push(new DocumentParts(1,"date4_1",0,0,"",0));
+partsArray.push(new DocumentParts(4,"day4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"user_section4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"ex_line4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mobile4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"name_k4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"juryou4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"shushi4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"yosan4",0,0,"",0));
+partsArray.push(new DocumentParts(4,"henkyaku4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"mokuteki4",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban41",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount41",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item41",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban42",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount42",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item42",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban43",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount43",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item43",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban44",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount44",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item44",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban45",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount45",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item45",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban46",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount46",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item46",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban47",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount47",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item47",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban48",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount48",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item48",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban49",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount49",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item49",0,0,"",0));
+partsArray.push(new DocumentParts(1,"hinban50",0,0,"",0));
+partsArray.push(new DocumentParts(1,"amount50",0,0,"",0));
+partsArray.push(new DocumentParts(1,"item50",0,0,"",0));
+
+//-->
+</SCRIPT>
+ 
+<META name="GENERATOR" content="MSHTML 11.00.9600.18978"></HEAD> 
+<BODY class="win" topmargin="0" leftmargin="0" onload="JavaScript:_load();" 
+marginheight="0" marginwidth="0">
+<FORM name="doc_body">
+<TABLE width="100%" style="background-color: rgb(225, 255, 255);" border="0" 
+cellspacing="1" 
+cellpadding="4"><INPUT name="bunki" type="hidden" size="10" maxlength="5" value="仮出庫" gflow-copy-none="1" gflow-csv="0"> 
+  <TBODY>
+  <TR>
+    <TD>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD width="100" align="left" nowrap="" valign="top" style="font-size: 9pt;">21150:MEBD</TD>
+          <TD align="center" nowrap="" 
+            style="font-size: 16pt;"><B>商品仮出庫伝票（経理用）</B></TD>
+          <TD width="50" align="right" nowrap="">
+            <TABLE width="22" height="22" bgcolor="#000000" border="0" 
+            cellspacing="1" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" style="font-size: 13pt;" 
+                  bgcolor="#ffffff"><B>A</B>
+        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD>
+            <TABLE border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD align="center" nowrap="" style="font-size: 10pt;" bgcolor="#7fffd4">経理責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 10pt;" bgcolor="#7fffd4">経理担当者</TD>
+                <TD align="center" nowrap="" style="font-size: 10pt;" bgcolor="#7fffd4">商務責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 10pt;" bgcolor="#7fffd4">部門責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 10pt;" bgcolor="#7fffd4">申請者</TD></TR>
+              <TR>
+                <TD align="center">
+                  <SMALL>
+                  <SPAN id="name5"><gflow-stamp gflow-csv="1" activity="経理責任者" type="user_name"></SPAN><BR>
+                  <SPAN id="date5"><gflow-stamp gflow-csv="1" activity="経理責任者" type="date" format="yyyy/MM/dd"></SPAN>
+                  </SMALL>
+                </TD>
+                <TD align="center">
+                  <SMALL>
+                  <SPAN id="name4"><gflow-stamp gflow-csv="1" activity="経理担当者" type="user_name"></SPAN><BR>
+                  <SPAN id="date4"><gflow-stamp gflow-csv="1" activity="経理担当者" type="date" format="yyyy/MM/dd"></SPAN>
+                  </SMALL>
+                </TD>
+                <TD align="center">
+                  <SMALL>
+                  <SPAN id="name3"><gflow-stamp gflow-csv="1" activity="商務責任者" type="user_name"></SPAN><BR>
+                  <SPAN id="date3"><gflow-stamp gflow-csv="1" activity="商務責任者" type="date" format="yyyy/MM/dd"></SPAN>
+                  </SMALL>
+                </TD>
+                <TD align="center">
+                  <SMALL>
+                  <SPAN id="name2"><gflow-stamp gflow-csv="1" activity="部門責任者" type="user_name"></SPAN><BR>
+                  <SPAN id="date2"><gflow-stamp gflow-csv="1" activity="部門責任者" type="date" format="yyyy/MM/dd"></SPAN>
+                  </SMALL>
+                </TD>
+                <TD align="center" valign="top">
+                  <SMALL>
+                  <SPAN id="name1"><gflow-stamp gflow-csv="1" activity="申請者" type="user_name"></SPAN><BR>
+                  <SPAN id="date1"><gflow-stamp gflow-csv="1" activity="申請者" type="date" format="yyyy/MM/dd"></SPAN>
+                  </SMALL>
+                </TD></TR></TBODY></TABLE></TD>
+          <TD width="130" align="left" nowrap="" valign="top" style="text-align: left;">伝票No&nbsp;&nbsp;<SPAN 
+            style="font-size: 10pt;"><gflow-serial 
+            gflow-csv="2"></gflow-serial></SPAN>		 </TD></TR></TBODY></TABLE><BR>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="middle" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="70" nowrap="" valign="middle">記入日</TD>
+                <TD><INPUT name="day_year" style="padding: 0.1em 0.2em; width: 3em;" onchange="JavaScript:_set_week('day');" type="text" size="5" maxlength="4" gflow-csv="3" gflow-allow="申請者" gflow-copy="1">/<INPUT name="day_month" style="padding: 0.1em 0.2em; width: 1.8em;" onchange="JavaScript:_set_week('day');" type="text" size="3" maxlength="2" gflow-csv="3" gflow-allow="申請者" gflow-copy="1">/<INPUT name="day_day" style="padding: 0.1em 0.2em; width: 1.8em;" onchange="JavaScript:_set_week('day');" type="text" size="3" maxlength="2" gflow-csv="3" gflow-allow="申請者" gflow-copy="1">&nbsp;<INPUT name="day_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="3">&nbsp;<A 
+                  onclick="if(document.getElementsByName('day_year')[0].readOnly) {return false;}" 
+                  href="javascript:_open_calendar('day');"><SMALL>カレンダー</SMALL></A>&nbsp;<INPUT class="btnS" onclick="JavaScript:return _set_now(4,'day');" type="button" value="now" gflow-csv="0">&nbsp;<INPUT class="btnS" onclick="JavaScript:return _clear(4,'day');" type="button" value="clear" gflow-csv="0">&nbsp;&nbsp;&nbsp;氏名（ｶﾀｶﾅ）&nbsp;&nbsp;&nbsp;<SPAN id="name_k"><gflow-userinfo gflow-csv="4" type="name_kana"></gflow-userinfo></SPAN>
+                  			 </TD></TR></TBODY></TABLE></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">申請部門：</TD>
+          <TD colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="70" nowrap="" valign="top">所属名</TD>
+                <TD nowrap="" 
+valign="middle"><INPUT name="user_section" style="background-color: rgb(255, 255, 128);" type="text" size="76" readonly="" value="<GFLOW-USERINFO type='section'>" gflow-csv="5" gflow-allow="申請者" gflow-copy="0">
+                  			 </TD></TR>
+              <TR>
+                <TD nowrap="" valign="middle">内線&nbsp;</TD>
+                <TD nowrap="" valign="middle" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD><INPUT name="ex_line" style="-ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="25" maxlength="15" gflow-csv="6" gflow-allow="申請者" gflow-copy="1">
+                        					 </TD>
+                      <TD width="100" 
+                      align="right">携帯or外線&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+                      <TD align="right"><INPUT name="mobile" style="-ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="25" maxlength="15" gflow-csv="7" gflow-allow="申請者" gflow-copy="1"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD></TD>
+          <TD align="right" valign="top" rowspan="3">
+            <TABLE border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD width="90" align="center" nowrap="" valign="top" style="font-size: 8pt;" 
+                bgcolor="#7fffd4">受領印</TD>
+                <TD width="90" align="center" nowrap="" valign="top" style="font-size: 8pt;" 
+                bgcolor="#7fffd4">出庫印日付</TD></TR>
+              <TR>
+                <TD height="45" align="center" valign="top" style="font-size: 9pt;">&nbsp;<BR><SPAN 
+                  id="juryou"><gflow-userinfo gflow-csv="8" 
+                  type="name"></gflow-userinfo></SPAN></TD>
+                <TD height="45" align="center" valign="middle" style="font-size: 9pt;">&nbsp;</TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD 
+            colspan="2">-----------------------------------------------------------------------------------------</TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" style="text-align: left;">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD height="16"><span class="notes" style="font-size:7pt;">出庫収支を選択<br>してください。</span></TD></TR>
+              <TR>
+                <TD>&nbsp;</TD></TR></TBODY></TABLE></TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD nowrap="" valign="top">出庫収支&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;">
+                  <SELECT name="shushi" class="s" style="background-color: rgb(255, 255, 128);" onchange="" gflow-csv="9" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1" gflow-key="出庫収支一覧">
+                 </SELECT>				 </TD></TR>
+              <TR>
+                <TD nowrap="" valign="top">予算単位&nbsp;</TD>
+                <TD nowrap="" 
+style="text-align: left;"><INPUT name="yosan" style="-ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="7" maxlength="5" gflow-csv="10" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR>
+              <TR>
+                <TD nowrap="" valign="top">返却予定日&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;"><INPUT name="henkyaku_year" style="padding: 0.1em 0.2em; width: 3em; background-color: rgb(255, 255, 128);" onchange="JavaScript:_set_week('henkyaku');" type="text" size="5" maxlength="4" gflow-csv="11" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">/<INPUT name="henkyaku_month" style="padding: 0.1em 0.2em; width: 1.8em; background-color: rgb(255, 255, 128);" onchange="JavaScript:_set_week('henkyaku');" type="text" size="3" maxlength="2" gflow-csv="11" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">/<INPUT name="henkyaku_day" style="padding: 0.1em 0.2em; width: 1.8em; background-color: rgb(255, 255, 128);" onchange="JavaScript:_set_week('henkyaku');" type="text" size="3" maxlength="2" gflow-csv="11" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">&nbsp;<INPUT name="henkyaku_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; background-color: rgb(255, 255, 128);" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="11">&nbsp;<A 
+                  onclick="if(document.getElementsByName('henkyaku_year')[0].readOnly) {return false;}" 
+                  href="javascript:_open_calendar('henkyaku');"><SMALL>カレンダー</SMALL></A>&nbsp;<INPUT class="btnS" onclick="JavaScript:return _set_now(4,'henkyaku');" type="button" value="now" gflow-csv="0">&nbsp;<INPUT class="btnS" onclick="JavaScript:return _clear(4,'henkyaku');" type="button" value="clear" gflow-csv="0">
+                  				 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="16">&nbsp;</TD>
+          <TD colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="70" nowrap="" valign="top">使用目的&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;" 
+colspan="3"><INPUT name="mokuteki" style="-ms-ime-mode: active; background-color: rgb(255, 255, 128);" type="text" size="76" maxlength="40" gflow-csv="12" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">
+                  		 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD 
+            colspan="3">---------------------------------------------------------------------------------------------------------------------------------------------</TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" style="text-align: left;">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD height="25">発送先：</TD></TR></TBODY></TABLE>
+          <TD colspan="2">
+            <TABLE width="555" border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="70" align="left" nowrap="" 
+                valign="middle">郵便番号&nbsp;</TD>
+                <TD nowrap="" 
+style="text-align: right;"><INPUT name="post_no" style="-ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="14" maxlength="8" gflow-csv="13" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">
+                  				 </TD>
+                <TD width="70" align="right" nowrap="" 
+                  valign="top">要望着日&nbsp;&nbsp;&nbsp;</TD>
+                <TD width="345" style="text-align: left;"><INPUT name="request_year" style="padding: 0.1em 0.2em; width: 3em; background-color: rgb(255, 255, 128);" onchange="JavaScript:_set_week('request');" type="text" size="5" maxlength="4" gflow-csv="14" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">/<INPUT name="request_month" style="padding: 0.1em 0.2em; width: 1.8em; background-color: rgb(255, 255, 128);" onchange="JavaScript:_set_week('request');" type="text" size="3" maxlength="2" gflow-csv="14" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">/<INPUT name="request_day" style="padding: 0.1em 0.2em; width: 1.8em; background-color: rgb(255, 255, 128);" onchange="JavaScript:_set_week('request');" type="text" size="3" maxlength="2" gflow-csv="14" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">&nbsp;<INPUT name="request_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; background-color: rgb(255, 255, 128);" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="14">&nbsp;<A 
+                  onclick="if(document.getElementsByName('request_year')[0].readOnly) {return false;}" 
+                  href="javascript:_open_calendar('request');"><SMALL>カレンダー</SMALL></A>&nbsp;<INPUT class="btnS" onclick="JavaScript:return _set_now(4,'request');" type="button" value="now" gflow-csv="0">&nbsp;<INPUT class="btnS" onclick="JavaScript:return _clear(4,'request');" type="button" value="clear" gflow-csv="0">
+                  				 </TD></TR>
+              <TR>
+                <TD nowrap="" valign="top">住所&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;" 
+colspan="3"><INPUT name="address" style="-ms-ime-mode: active; background-color: rgb(255, 255, 128);" type="text" size="76" maxlength="40" gflow-csv="15" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">
+                  				 </TD></TR>
+              <TR>
+                <TD nowrap="" valign="top">会社&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;" 
+colspan="3"><INPUT name="company" style="-ms-ime-mode: active; background-color: rgb(255, 255, 128);" type="text" size="76" maxlength="40" gflow-csv="16" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">
+                  				 </TD></TR>
+              <TR>
+                <TD nowrap="" valign="top">荷受人&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;" 
+colspan="3"><INPUT name="niukenin" style="-ms-ime-mode: active; background-color: rgb(255, 255, 128);" type="text" size="30" maxlength="17" gflow-csv="17" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">
+                  				 </TD></TR>
+              <TR>
+                <TD nowrap="" valign="top">外線&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;" colspan="3">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD><INPUT name="out_line1" style="-ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="25" maxlength="15" gflow-csv="18" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1">
+                        						 </TD>
+                      <TD width="70" align="right" 
+                        valign="top">内線&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+                      <TD align="right"><INPUT name="line" style="-ms-ime-mode: disabled;" type="text" size="25" maxlength="15" gflow-csv="19" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD colspan="2"></TD></TR>
+        <TR>
+          <TD height="4"></TD>
+          <TD colspan="2"></TD></TR></TBODY></TABLE>
+      <TABLE width="630" bordercolor="#000000" border="1" cellspacing="0">
+        <TBODY>
+        <TR>
+          <TD align="center" style="font-size: 10pt;" 
+            bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" style="font-size: 10pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" bgcolor="#7fffd4">&nbsp;</TD>
+          <TD align="center"></TD>
+          <TD align="center" style="font-size: 10pt;" 
+            bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" style="font-size: 10pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" bgcolor="#7fffd4">&nbsp;</TD></TR>
+        <TR>
+          <TD align="left"><INPUT name="hinban1" style="-ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="16" maxlength="17" gflow-csv="20" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount1" style="text-align: right; -ms-ime-mode: disabled; background-color: rgb(255, 255, 128);" type="text" size="1" maxlength="5" gflow-csv="21" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item1" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="22" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="center"></TD>
+          <TD align="left"><INPUT name="hinban2" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="23" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount2" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="24" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item2" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="25" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR>
+        <TR>
+          <TD align="left"><INPUT name="hinban3" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="26" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount3" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="27" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item3" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="28" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="center"></TD>
+          <TD align="left"><INPUT name="hinban4" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="29" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount4" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="30" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item4" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="31" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR>
+        <TR>
+          <TD align="left"><INPUT name="hinban5" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="32" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount5" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="33" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item5" style="-ms-ime-mode: disabled;" type="text" size="15" maxlength="17" readonly="" gflow-csv="34" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="center"></TD>
+          <TD align="left"><INPUT name="hinban6" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="35" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount6" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="36" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item6" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="37" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR>
+        <TR>
+          <TD align="left"><INPUT name="hinban7" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="38" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount7" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="39" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item7" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="40" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="center"></TD>
+          <TD align="left"><INPUT name="hinban8" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="41" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount8" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="42" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item8" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="43" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR>
+        <TR>
+          <TD align="left"><INPUT name="hinban9" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="44" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount9" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="45" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD 
+align="left"><INPUT name="item9" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="46" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="center"></TD>
+          <TD align="left"><INPUT name="hinban10" style="-ms-ime-mode: disabled;" type="text" size="16" maxlength="17" gflow-csv="47" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="amount10" style="text-align: right; -ms-ime-mode: disabled;" type="text" size="1" maxlength="5" gflow-csv="48" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD>
+          <TD align="left"><INPUT name="item10" style="-ms-ime-mode: inactive;" type="text" size="15" maxlength="17" readonly="" gflow-csv="49" gflow-allow="申請者,経理担当者,経理責任者" gflow-copy="1"></TD></TR></TBODY></TABLE>
+      <TABLE border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD height="20" nowrap="" style="font-size: 9pt;">&nbsp;<SPAN class="notes">※品番、数量は半角で入力してください</SPAN></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="0" cellpadding="0">
+  <TBODY>
+  <TR>
+    <TD>
+      <HR size="1" noshade="">
+    </TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="1" cellpadding="4">
+  <TBODY>
+  <TR>
+    <TD>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD align="left" valign="top" style="font-size: 6pt;">21150:MEBD</TD>
+          <TD width="" align="center" nowrap="" 
+            style="font-size: 12pt;"><B>商品仮出庫伝票（倉庫用）</B></TD>
+          <TD width="50" align="right" nowrap="">
+            <TABLE width="20" height="20" bgcolor="#000000" border="0" 
+            cellspacing="1" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" style="font-size: 10pt;" 
+                  bgcolor="#ffffff"><B>B</B>
+        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD width="500">
+            <TABLE width="430" border="1" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理担当者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">商務責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">部門責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">申請者</TD></TR>
+              <TR>
+                <TD align="center"><INPUT name="name1_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date1_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name1_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date1_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name1_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date1_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name1_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date1_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name1_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date1_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD width="130" align="left" nowrap="" valign="top" style="text-align: left;">伝票No&nbsp;&nbsp;<SPAN 
+            style="font-size: 13pt;"><gflow-serial 
+            gflow-csv="0"></gflow-serial></SPAN>		 </TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR><TD height="4" colspan="2"></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="middle" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">記入日</TD>
+                <TD style="font-size: 6pt;"><INPUT name="day1_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('day1');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day1_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day1');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day1_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day1');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="day1_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">&nbsp;&nbsp;&nbsp;氏名（ｶﾀｶﾅ）&nbsp;&nbsp;&nbsp;<INPUT name="name_k1" style="border-width: 0px; font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="top">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">所属名</TD>
+                <TD><INPUT name="user_section1" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+              <TR></TR></TBODY></TABLE></TD>
+          <TD align="right" valign="top" rowspan="5">
+            <TABLE border="1" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">受領印</TD>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">出庫印日付</TD></TR>
+              <TR>
+                <TD height="45" align="center" valign="top" style="font-size: 6pt;"><BR><INPUT name="juryou1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="10" maxlength="40" readonly="" gflow-copy-none="1" gflow-csv="0"></TD>
+                <TD height="45" align="center" valign="middle" style="font-size: 6pt;">&nbsp;</TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">申請部門：</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">内線&nbsp;</TD>
+                <TD nowrap="" valign="middle" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="ex_line1" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="77" align="right" 
+                        style="font-size: 6pt;">携帯or外線&nbsp;&nbsp;&nbsp;</TD>
+                      <TD align="right"><INPUT name="mobile1" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">出庫収支&nbsp;</TD>
+                <TD nowrap="" 
+style="text-align: left;"><INPUT name="shushi1" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  				 </TD></TR>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">予算単位&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="yosan1" style="font-size: 6pt;" type="text" size="7" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="80" align="right" valign="middle" style="font-size: 6pt;">返却予定日&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+                      <TD nowrap="" style="text-align: left;"><INPUT name="henkyaku1_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku1');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku1_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku1');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku1_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku1');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="henkyaku1_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">
+                        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+      <TABLE border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD width="70" nowrap="" valign="top"></TD>
+          <TD width="55" nowrap="" valign="top" 
+          style="font-size: 6pt;">使用目的&nbsp;</TD>
+          <TD width="498" style="text-align: left;">
+            <DIV><INPUT name="mokuteki1" style="font-size: 6pt;" type="text" size="116" maxlength="40" gflow-copy-none="1" gflow-csv="0"></DIV></TD></TR>
+        <TR>
+          <TD height="4" colspan="3"></TD></TR></TBODY></TABLE>
+      <TABLE width="630" bordercolor="#000000" border="1" cellspacing="0">
+        <TBODY>
+        <TR>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD>
+          <TD align="center"></TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban11" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount11" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item11" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban12" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount12" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item12" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban13" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount13" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item13" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban14" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount14" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item14" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban15" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount15" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item15" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban16" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount16" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item16" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban17" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount17" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item17" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban18" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount18" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item18" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban19" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount19" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item19" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="97" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban20" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount20" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item20" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="0" cellpadding="0">
+  <TBODY>
+  <TR>
+    <TD>
+      <HR size="1" noshade="">
+    </TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="1" 
+cellpadding="4">
+  <TBODY>
+  <TR style="page-break-before: always;">
+    <TD>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD align="left" valign="top" style="font-size: 6pt;">21150:MEBD</TD>
+          <TD width="" align="center" nowrap="" 
+            style="font-size: 12pt;"><B>商品仮出庫戻入伝票（発行控）</B></TD>
+          <TD width="50" align="right" nowrap="">
+            <TABLE width="20" height="20" bgcolor="#000000" border="0" 
+            cellspacing="1" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" style="font-size: 10pt;" 
+                  bgcolor="#ffffff"><B>C</B>
+        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD width="500">
+            <TABLE width="430" border="1" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理担当者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">商務責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">部門責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">申請者</TD></TR>
+              <TR>
+                <TD align="center"><INPUT name="name2_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date2_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name2_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date2_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name2_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date2_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name2_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date2_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name2_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date2_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD width="130" align="left" nowrap="" valign="top" style="text-align: left;">伝票No&nbsp;<SPAN 
+            style="font-size: 13pt;"><gflow-serial 
+            gflow-csv="0"></gflow-serial></SPAN>		 </TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR><TD height="4" colspan="2"></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="middle" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">記入日</TD>
+                <TD style="font-size: 6pt;"><INPUT name="day2_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('day2');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day2_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day2');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day2_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day2');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="day2_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">&nbsp;&nbsp;&nbsp;氏名（ｶﾀｶﾅ）&nbsp;&nbsp;&nbsp;<INPUT name="name_k2" style="border-width: 0px; font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="center">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">所属名</TD>
+                <TD><INPUT name="user_section2" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD align="right" valign="top" rowspan="5">
+            <TABLE border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">受領印</TD>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">出庫印日付</TD></TR>
+              <TR>
+                <TD height="45" align="center" valign="top" style="font-size: 6pt;"><BR><INPUT name="juryou2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="10" maxlength="40" readonly="" gflow-copy-none="1" gflow-csv="0"></TD>
+                <TD height="45" align="center" valign="middle" style="font-size: 6pt;">&nbsp;</TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">申請部門：</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">内線&nbsp;</TD>
+                <TD nowrap="" valign="middle" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="ex_line2" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="77" align="right" 
+                        style="font-size: 6pt;">携帯or外線&nbsp;&nbsp;&nbsp;</TD>
+                      <TD align="right"><INPUT name="mobile2" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">出庫収支&nbsp;</TD>
+                <TD nowrap="" 
+style="text-align: left;"><INPUT name="shushi2" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  				 </TD></TR>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">予算単位&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="yosan2" style="font-size: 6pt;" type="text" size="7" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="80" align="right" valign="middle" style="font-size: 6pt;">返却予定日&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+                      <TD nowrap="" style="text-align: left;"><INPUT name="henkyaku2_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku2');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku2_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku2');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku2_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku2');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="henkyaku2_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">
+                        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="top" 
+                  style="font-size: 6pt;">使用目的&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;"><INPUT name="mokuteki2" style="font-size: 6pt;" type="text" size="116" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  		 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD height="4" colspan="3"></TD></TR></TBODY></TABLE>
+      <TABLE width="630" bordercolor="#000000" border="1" cellspacing="0">
+        <TBODY>
+        <TR>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD>
+          <TD align="center"></TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban21" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount21" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item21" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban22" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount22" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item22" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban23" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount23" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item23" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban24" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount24" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item24" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban25" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount25" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item25" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban26" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount26" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item26" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban27" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount27" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item27" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban28" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount28" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item28" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban29" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount29" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item29" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="97" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban30" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount30" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item30" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="0" cellpadding="0">
+  <TBODY>
+  <TR>
+    <TD>
+      <HR size="1" noshade="">
+    </TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="1" cellpadding="4">
+  <TBODY>
+  <TR>
+    <TD>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD align="left" valign="top" style="font-size: 6pt;">21150:MEBD</TD>
+          <TD width="" align="center" nowrap="" 
+            style="font-size: 12pt;"><B>商品仮出庫戻入伝票（経理用）</B></TD>
+          <TD width="50" align="right" nowrap="">
+            <TABLE width="20" height="20" bgcolor="#000000" border="0" 
+            cellspacing="1" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" style="font-size: 10pt;" 
+                  bgcolor="#ffffff"><B>D</B>
+        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD width="500">
+            <TABLE width="430" border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理担当者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">商務責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">部門責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">申請者</TD></TR>
+              <TR>
+                <TD align="center"><INPUT name="name3_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date3_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name3_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date3_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name3_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date3_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name3_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date3_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name3_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date3_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD width="130" align="left" nowrap="" valign="top" style="text-align: left;">伝票No&nbsp;<SPAN 
+            style="font-size: 13pt;"><gflow-serial 
+            gflow-csv="0"></gflow-serial></SPAN>		 </TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR><TD height="4" colspan="2"></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="middle" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">記入日</TD>
+                <TD style="font-size: 6pt;"><INPUT name="day3_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('day3');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day3_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day3');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day3_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day3');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="day3_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">&nbsp;&nbsp;&nbsp;氏名（ｶﾀｶﾅ）&nbsp;&nbsp;&nbsp;<INPUT name="name_k3" style="border-width: 0px; font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="center">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">所属名</TD>
+                <TD><INPUT name="user_section3" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD align="right" valign="top" rowspan="5">
+            <TABLE border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">受領印</TD>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">出庫印日付</TD></TR>
+              <TR>
+                <TD height="45" align="center" valign="top" style="font-size: 6pt;"><BR><INPUT name="juryou3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="10" maxlength="40" readonly="" gflow-copy-none="1" gflow-csv="0"></TD>
+                <TD height="45" align="center" valign="middle" style="font-size: 6pt;">&nbsp;</TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">申請部門：</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">内線&nbsp;</TD>
+                <TD nowrap="" valign="middle" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="ex_line3" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="77" align="right" 
+                        style="font-size: 6pt;">携帯or外線&nbsp;&nbsp;&nbsp;</TD>
+                      <TD align="right"><INPUT name="mobile3" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">出庫収支&nbsp;</TD>
+                <TD nowrap="" 
+style="text-align: left;"><INPUT name="shushi3" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  				 </TD></TR>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">予算単位&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="yosan3" style="font-size: 6pt;" type="text" size="7" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="80" align="right" valign="middle" style="font-size: 6pt;">返却予定日&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+                      <TD nowrap="" style="text-align: left;"><INPUT name="henkyaku3_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku3');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku3_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku3');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku3_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku3');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="henkyaku3_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">
+                        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD width="560" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="top" 
+                  style="font-size: 6pt;">使用目的&nbsp;</TD>
+                <TD width="500" style="text-align: left;">
+                  <DIV><INPUT name="mokuteki3" style="font-size: 6pt;" type="text" size="116" maxlength="40" gflow-copy-none="1" gflow-csv="0"></DIV></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD height="4" colspan="3"></TD></TR></TBODY></TABLE>
+      <TABLE width="630" bordercolor="#000000" border="1" cellspacing="0">
+        <TBODY>
+        <TR>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD>
+          <TD align="center"></TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban31" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount31" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item31" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban32" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount32" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item32" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban33" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount33" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item33" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban34" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount34" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item34" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban35" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount35" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item35" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban36" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount36" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item36" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban37" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount37" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item37" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban38" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount38" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item38" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban39" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount39" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item39" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="97" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban40" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount40" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item40" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+
+<TABLE width="100%" border="0" cellspacing="0" cellpadding="0">
+  <TBODY>
+  <TR>
+    <TD>
+      <HR size="1" noshade="">
+    </TD></TR></TBODY></TABLE>
+<TABLE width="100%" border="0" cellspacing="1" cellpadding="4">
+  <TBODY>
+  <TR>
+    <TD>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD align="left" valign="top" style="font-size: 6pt;">21150:MEBD</TD>
+          <TD width="" align="center" nowrap="" 
+            style="font-size: 12pt;"><B>商品仮出庫戻入伝票（倉庫用）</B></TD>
+          <TD width="50" align="right" nowrap="">
+            <TABLE width="20" height="20" bgcolor="#000000" border="0" 
+            cellspacing="1" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD align="center" style="font-size: 10pt;" 
+                  bgcolor="#ffffff"><B>E</B>
+        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR>
+          <TD width="500">
+            <TABLE width="430" border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">経理担当者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">商務責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">部門責任者</TD>
+                <TD align="center" nowrap="" style="font-size: 6pt;" bgcolor="#7fffd4">申請者</TD></TR>
+              <TR>
+                <TD align="center"><INPUT name="name4_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date4_5" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name4_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date4_4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name4_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date4_3" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name4_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date4_2" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD>
+                <TD align="center"><INPUT name="name4_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0"><BR><INPUT name="date4_1" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="12" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD width="130" align="left" nowrap="" valign="top" style="text-align: left;">伝票No&nbsp;<SPAN 
+            style="font-size: 13pt;"><gflow-serial 
+            gflow-csv="0"></gflow-serial></SPAN>		 </TD></TR></TBODY></TABLE>
+      <TABLE width="630" border="0" cellspacing="0" cellpadding="0">
+        <TBODY>
+        <TR><TD height="4" colspan="2"></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="middle" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">記入日</TD>
+                <TD style="font-size: 6pt;"><INPUT name="day4_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('day4');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day4_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day4');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="day4_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('day4');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="day4_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">&nbsp;&nbsp;&nbsp;氏名（ｶﾀｶﾅ）&nbsp;&nbsp;&nbsp;<INPUT name="name_k4" style="border-width: 0px; font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD nowrap="" valign="center">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" style="font-size: 6pt;">所属名</TD>
+                <TD><INPUT name="user_section4" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  			 </TD></TR></TBODY></TABLE></TD>
+          <TD align="right" valign="top" rowspan="5">
+            <TABLE border="1" cellspacing="0" cellpadding="1">
+              <TBODY>
+              <TR>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">受領印</TD>
+                <TD width="90" align="center" nowrap="" valign="middle" style="font-size: 6pt;" 
+                bgcolor="#7fffd4">出庫印日付</TD></TR>
+              <TR>
+                <TD height="45" align="center" valign="top" style="font-size: 6pt;"><BR><INPUT name="juryou4" style="border-width: 0px; text-align: center; font-size: 6pt;" type="text" size="10" maxlength="40" readonly="" gflow-copy-none="1" gflow-csv="0"></TD>
+                <TD height="45" align="center" valign="middle" style="font-size: 6pt;">&nbsp;</TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">申請部門：</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">内線&nbsp;</TD>
+                <TD nowrap="" valign="middle" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="ex_line4" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="77" align="right" 
+                        style="font-size: 6pt;">携帯or外線&nbsp;&nbsp;&nbsp;</TD>
+                      <TD align="right"><INPUT name="mobile4" style="font-size: 6pt;" type="text" size="23" maxlength="40" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD></TD>
+          <TD></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD>
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">出庫収支&nbsp;</TD>
+                <TD nowrap="" 
+style="text-align: left;"><INPUT name="shushi4" style="font-size: 6pt;" type="text" size="72" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                  				 </TD></TR>
+              <TR>
+                <TD width="55" nowrap="" valign="middle" 
+                  style="font-size: 6pt;">予算単位&nbsp;</TD>
+                <TD nowrap="" style="text-align: left;">
+                  <TABLE border="0" cellspacing="0" cellpadding="0">
+                    <TBODY>
+                    <TR>
+                      <TD width="100"><INPUT name="yosan4" style="font-size: 6pt;" type="text" size="7" maxlength="40" gflow-copy-none="1" gflow-csv="0">
+                        					 </TD>
+                      <TD width="80" align="right" valign="middle" style="font-size: 6pt;">返却予定日&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+                      <TD nowrap="" style="text-align: left;"><INPUT name="henkyaku4_year" style="padding: 0.1em 0.2em; width: 3em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku4');" type="text" size="5" maxlength="4" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku4_month" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku4');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">/<INPUT name="henkyaku4_day" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onchange="JavaScript:_set_week('henkyaku4');" type="text" size="3" maxlength="2" gflow-copy-none="1" gflow-csv="0">&nbsp;<INPUT name="henkyaku4_wday" tabindex="-1" class="referWK" style="padding: 0.1em 0.2em; width: 1.8em; font-size: 6pt;" onfocus="this.blur();" type="text" size="2" readonly="" gflow-csv="0">
+                        					 </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD width="560" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="top" 
+                  style="font-size: 6pt;">使用目的&nbsp;</TD>
+                <TD width="500" style="text-align: left;">
+                  <DIV><INPUT name="mokuteki4" style="font-size: 6pt;" type="text" size="116" maxlength="40" gflow-copy-none="1" gflow-csv="0"></DIV></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD width="70" nowrap="" valign="top" 
+          style="text-align: left;">&nbsp;</TD>
+          <TD width="560" colspan="2">
+            <TABLE border="0" cellspacing="0" cellpadding="0">
+              <TBODY>
+              <TR>
+                <TD width="55" nowrap="" valign="top" 
+                  style="font-size: 6pt;">テスト行&nbsp;</TD>
+                <TD width="500" style="text-align: left;">
+                  <DIV><INPUT name="mokuteki4" style="font-size: 6pt;" type="text" size="116" maxlength="40" gflow-copy-none="1" gflow-csv="0"></DIV></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD height="4" colspan="3"></TD></TR></TBODY></TABLE>
+      <TABLE width="630" bordercolor="#000000" border="1" cellspacing="0">
+        <TBODY>
+        <TR>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD>
+          <TD align="center"></TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">品番（色まで記入）</TD>
+          <TD align="center" valign="middle" style="font-size: 7pt;" bgcolor="#7fffd4">数量</TD>
+          <TD align="center" valign="middle" bgcolor="#7fffd4">&nbsp;</TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban41" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount41" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item41" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban42" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount42" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item42" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban43" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount43" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item43" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban44" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount44" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item44" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban45" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount45" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item45" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban46" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount46" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item46" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban47" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount47" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item47" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban48" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount48" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item48" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR>
+        <TR>
+          <TD 
+align="left"><INPUT name="hinban49" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount49" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item49" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="97" gflow-csv="0"></TD>
+          <TD align="center"></TD>
+          <TD 
+align="left"><INPUT name="hinban50" style="font-size: 7pt;" type="text" size="26" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="amount50" style="text-align: right; font-size: 7pt;" type="text" size="3" maxlength="5" gflow-copy-none="1" gflow-csv="0"></TD>
+          <TD align="left"><INPUT name="item50" style="font-size: 7pt;" type="text" size="24" maxlength="17" gflow-copy-none="1" gflow-csv="0"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE>
+
+<TABLE width="100%" border="0" cellspacing="0" cellpadding="0">
+  <TBODY>
+  <TR>
+    <TD>
+      <HR size="1" noshade="">
+    </TD></TR></TBODY></TABLE>
+<SCRIPT type="text/javaScript">
+	var win_onload = window.onload;
+	window.onload = function() {
+		win_onload();
+		copy();
+//		document.forms[0].keiri_sn_1.value = document.forms[0].keiri_sn_2.value = document.forms[0].keiri_sn_3.value = document.forms[0].keiri_sn_4.value = document.getElementById("keiri_sn").innerText;
+//		document.forms[0].keiri_sd_1.value = document.forms[0].keiri_sd_2.value = document.forms[0].keiri_sd_3.value = document.forms[0].keiri_sd_4.value = document.getElementById("keiri_sd").innerText;
+//		document.forms[0].keiri_tn_1.value = document.forms[0].keiri_tn_2.value = document.forms[0].keiri_tn_3.value = document.forms[0].keiri_tn_4.value = document.getElementById("keiri_tname").innerText;
+//		document.forms[0].keiri_td_1.value = document.forms[0].keiri_td_2.value = document.forms[0].keiri_td_3.value = document.forms[0].keiri_td_4.value = document.getElementById("keiri_tdate").innerText;
+	}
+</SCRIPT>
+ </FORM></BODY></HTML>
